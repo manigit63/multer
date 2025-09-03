@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Document</title>
+  </head>
+  <body>
+    <h1>Upload Document</h1>
+    <form action="/submitform" method="POST" enctype="multipart/form-data">
+      <input type="file" name="userprofile" required />
+
+      <input type="file" name="userdocument" multiple="multiple" required />
+
+      <button type="submit">submit</button>
+    </form>
+  </body>
+</html>
