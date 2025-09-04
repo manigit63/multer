@@ -1,26 +1,113 @@
+// ------------------- Authentication -----------
+
+const express = require("express");
+const session = require("express-session");
+const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
+
+const User = require("./models/user.model.js");
+
+// db connect
+
+mongoose
+  .connect("mongodb://127.0.0.1/user-crud")
+  .then(() => console.log("DB Connected"));
+
+const app = express();
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.set("view engine", "ejs");
+
+
+
+// setting session
+app.use(
+  session({
+    secret: "sessionkey",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+
+let checkLogin = (req, res, next) => {
+  if (req.session.user) {
+    next();
+  } else res.redirect("login");
+};
+
+app.get("/", checkLogin, (req, res) => {
+  res.send(`<h1>Home Page</h1> <p>hello ${req.session.user} </p>
+    <a href='/logout'>logout</a>
+    `);
+});
+app.get("/profile", checkLogin, (req, res) => {
+  res.send(
+    `<h1>Profile Page</h1> <p>hello ${req.session.user} </p> <a href='/logout'>logout</a>`
+  );
+});
+
+app.get("/login", (req, res) => {
+  if (req.session.user) {
+    res.redirect("/");
+  } else {
+    res.render("login", { error: null });
+  }
+});
+app.get("/register", (req, res) => {
+  res.render("register", { error: null });
+});
+
+app.post("/register", async (req, res) => {
+  const { userName, userPassword, age } = req.body;
+  const hashPass = await bcrypt.hash(userPassword, 10);
+  // res.send({ userName, userPassword: hashPass });
+
+  await User.create({ userName, userPassword: hashPass, age });
+  res.redirect("/login");
+});
+
+app.post("/login", async (req, res) => {
+  const { userName, userpassword } = req.body;
+
+  const user = await User.findOne({ userName });
+  if (!user) return res.render("login", { error: "User not found" });
+
+  const isMatch = await bcrypt.compare(userpassword, user.userPassword);
+
+  if (!isMatch) return res.render("login", { error: "invalid password" });
+
+  req.session.user = userName; // session using username
+  res.redirect("/");
+});
+
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/login");
+  });
+});
+
+app.listen(3000, () => {
+  console.log("server is running on 3000");
+});
+
 // ---------------------------- session -------
 
-// const express = require("express");
-// const session = require("express-session");
-// const MongoStore = require("connect-mongo");
+// const { urlencoded } = require("body-// parser");
+// const express = require("express
+// const MongoStore = require("connect-mongo");");//
+// const app = express();//
 
-// const app = express();
-// // middleware - session
-// app.use(
-//   session({
-//     secret: "secretpassword",
-//     resave: false,
-//     saveUninitialized: false,
-//     store: MongoStore.create({
-//       mongoUrl: `mongodb://127.0.0.1:27017/sessiondb`,
-//       collectionName: "mysessions",
-//       // ttl: 1000 * 60 * 60,   ttl workas cookie
-//     }),
-//     cookie: { maxAge: 1000 * 60 * 60 }, //1hr
-//   })
-// );
-
-// app.get("/", (req, res) => {
+// const path - session =//  require("// path");
+// cons// t multer = require("multer");
+// // const { error } = re// quire("console");
+// app.use(ex
+// //     store: MongoStore.create({
+// //       mongoUrl: `mongodb://127.0.0.1:27017/sessiondb`,
+// //       collectionName: "mysessions",
+// //       // ttl: 1000 * 60 * 60,   ttl workas cookie
+// //     }),pr// ess.urlencoded({ extended: false }));
+// ap.use(e// xpress// .json(// app.get("/", (req, res) => {
 //   res.send(`<h1>heading 1</h1> ${req.session.username}`);
 // });
 
@@ -29,15 +116,13 @@
 //   res.send(`<h1>username has been set in session</h1>`);
 // });
 
-// app.get("/get-username", (req, res) => {
-//   if (req.session.username) {
+// ));ggetsetget-username("view engine", "ejs//   if (req.session.username) {
 //     res.send(
 //       `<h1>username has been get in session: ${req.session.username}</h1>`
 //     );
 //   } else {
 //     res.send(`<h1>no username found in session</h1>`);
-//   }
-// });
+//   }e // + "
 
 // app.get("/destroy", (req, res) => {
 //   req.session.destroy((err) => {
@@ -46,29 +131,9 @@
 //     }
 //     res.send(`<h1>Session destroy successfully</h1>`);
 //   });
-// });
-
-// app.listen(3000, () => {
+// });/vie// app.listen(3000, () => {
 //   console.log("server is running");
-// });
-
-// --------------- multer-------------------------
-
-// const { urlencoded } = require("body-parser");
-// const express = require("express");
-// const app = express();
-
-// const path = require("path");
-// const multer = require("multer");
-// const { error } = require("console");
-// app.use(express.urlencoded({ extended: false }));
-// app.use(express.json());
-// app.set("view engine", "ejs");
-// // app.set("views", __dirname + "/views");
-
-// app.get("/", (req, res) => {
-//   res.render("upload");
-// });
+// });;
 
 // const storage = multer.diskStorage({
 //   destination: (req, file, cb) => {
@@ -110,14 +175,14 @@
 //   fileFilter: filterfile,
 // });
 
-// // app.post("/submitform", upload.array("document", 3), (req, res) => {
-// //   if (!req.files || req.files.length === 0) {
-// //     return res.status(400).send("No file uploaded");
-// //   }
-// //   // Send filenames of uploaded files
-// //   const filenames = req.files.map(file => file.filename);
-// //   res.send({ uploaded: filenames });
-// // });
+// app.post("/submitform", upload.array("document", 3), (req, res) => {
+//   if (!req.files || req.files.length === 0) {
+//     return res.status(400).send("No file uploaded");
+//   }
+//   // Send filenames of uploaded files
+//   const filenames = req.files.map(file => file.filename);
+//   res.send({ uploaded: filenames });
+// });
 
 // app.post(
 //   "/submitform",
